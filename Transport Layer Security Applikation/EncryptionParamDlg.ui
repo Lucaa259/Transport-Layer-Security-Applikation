@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>EncryptionParamDlgClass</class>
+ <widget class="QMainWindow" name="EncryptionParamDlgClass">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>400</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>EncryptionParamDlg</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QMainWindow {
+	background-color: grey;
+}</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <property name="styleSheet">
+    <string notr="true">QWidget {
+	background-color: grey;
+}</string>
+   </property>
+   <widget class="QGroupBox" name="PF_Cert_Paths">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>311</width>
+      <height>161</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>Zertifikat und Privater Schlüssel</string>
+    </property>
+    <widget class="QLabel" name="label">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>30</y>
+       <width>91</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Certificate Path:</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="CertFilePath">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>50</y>
+       <width>211</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLineEdit {
+	background-color: white;
+	color: black;
+	border: 1px solid black;
+}</string>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_2">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>90</y>
+       <width>111</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Private Key Path:</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="PKFilePath">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>110</y>
+       <width>211</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLineEdit {
+	background-color: white;
+	color: black;
+	border: 1px solid black;
+}</string>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="SearchCert">
+     <property name="geometry">
+      <rect>
+       <x>230</x>
+       <y>43</y>
+       <width>71</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Suchen...</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="SearchPK">
+     <property name="geometry">
+      <rect>
+       <x>230</x>
+       <y>103</y>
+       <width>71</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Suchen...</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QPushButton" name="AdoptParamBtn">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>363</y>
+      <width>491</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Adopt Parameters</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="ExitBtn">
+    <property name="geometry">
+     <rect>
+      <x>510</x>
+      <y>363</y>
+      <width>81</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Exit</string>
+    </property>
+   </widget>
+   <widget class="QGroupBox" name="groupBox">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>10</y>
+      <width>251</width>
+      <height>161</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>TLS-Version</string>
+    </property>
+    <widget class="QRadioButton" name="SSLv3_0">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>30</y>
+       <width>211</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>SSLv3.0</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="TLSv1_0">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>50</y>
+       <width>211</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>TLSv1.0</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="TLSv1_1">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>70</y>
+       <width>211</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>TLSv1.1</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="TLSv1_2">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>90</y>
+       <width>211</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>TLSv1.2</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="TLSv1_3">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>110</y>
+       <width>211</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>TLSv1.3</string>
+     </property>
+    </widget>
+   </widget>
+  </widget>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources/>
+ <connections/>
+</ui>
