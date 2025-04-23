@@ -36,7 +36,7 @@ std::unique_ptr<TLS>  EncryptionParamDlg::TakeTLS()
 
 void EncryptionParamDlg::OnCertSearchBtnClicked()
 {
-	strCertPath = QFileDialog::getOpenFileName(this, "Zertifikat wählen", "", "Zertifikate (*.pem *.crt *.der)");
+	strCertPath = QFileDialog::getOpenFileName(this, "Zertifikat wählen", "", "Zertifikate (*.pem)");
 
 	if (!strCertPath.isEmpty())
 	{

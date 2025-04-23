@@ -30,6 +30,10 @@ void TLS_Config::Reset()
 	if (m_pSSL)
 	{
 		SSL_free(m_pSSL);
+
+		if (SSL_CTRL_SESS_CONNECT)
+			SSL_shutdown(m_pSSL);
+
 		m_pSSL = nullptr;
 	}
 
@@ -95,15 +99,35 @@ int TLS::EncryptedConnect()
 {
 	try
 	{
-		int nRes = SSL_connect(m_pParam.get()->m_pSSL);
+		int nRes = SSL_connect(m_pParam->m_pSSL);
+
+		if (nRes != 1) {
+			int nErr = SSL_get_error(m_pParam->m_pSSL, nRes);
+			char buf[256] = {};
+			ERR_error_string_n(ERR_get_error(), buf, sizeof(buf));
+			std::cerr << "Fehler bei SSL_connect: " << buf << std::endl;
+
+			if (m_pApp) {
+				QMetaObject::invokeMethod(m_pApp, [this, buf]() {
+					m_pApp->SetStatus("SSL_connect fehlgeschlagen: " + std::string(buf));
+					}, Qt::QueuedConnection);
+			}
+		}
 
 		return nRes;
 	}
-	catch (std::exception& error)
+	catch (const std::exception& error)
 	{
-		std::cout << "Error occured: " << error.what() << std::endl;
+		std::cerr << "Exception bei EncryptedConnect: " << error.what() << std::endl;
+		if (m_pApp) {
+			QMetaObject::invokeMethod(m_pApp, [this, error]() {
+				m_pApp->SetStatus("Exception bei EncryptedConnect: " + std::string(error.what()));
+				}, Qt::QueuedConnection);
+		}
+		return SSL_ERROR_SSL;
 	}
 }
+
 
 int TLS::SetEncryptedSocket(const SOCKET& nSocket)
 {
@@ -141,7 +165,6 @@ int TLS::AcceptEncryptedClient()
 			}
 			else
 			{
-				// Anderer Fehler bei SSL_accept
 				switch (nErr)
 				{
 				case SSL_ERROR_ZERO_RETURN:
@@ -225,36 +248,95 @@ int TLS::UseAlgorithm()
 
 int TLS::SendEncryptedMessage(const std::string& message)
 {
-	if (!m_pParam || !m_pParam->m_pSSL) {
-		return SSL_ERROR_SSL;
-	}
-
-	int total_sent = 0;
-	const char* data = message.c_str();
-	int remaining = static_cast<int>(message.length());
-
-	while (remaining > 0) {
-		int nResult = SSL_write(m_pParam->m_pSSL,
-			data + total_sent,
-			remaining);
-
-		if (nResult <= 0) {
-			int ssl_error = SSL_get_error(m_pParam->m_pSSL, nResult);
-
-			// Handle retryable errors
-			if (ssl_error == SSL_ERROR_WANT_READ ||
-				ssl_error == SSL_ERROR_WANT_WRITE) {
-				continue;
-			}
-			return ssl_error;
+	try
+	{
+		if (!m_pParam || !m_pParam->m_pSSL) {
+			return SSL_ERROR_SSL;
 		}
 
-		total_sent += nResult;
-		remaining -= nResult;
-	}
+		int total_sent = 0;
+		const char* data = message.c_str();
+		int remaining = static_cast<int>(message.length());
 
-	return total_sent;
+		while (remaining > 0) {
+			int nResult = SSL_write(m_pParam->m_pSSL, data + total_sent, remaining);
+
+			if (nResult <= 0) {
+				int ssl_error = SSL_get_error(m_pParam->m_pSSL, nResult);
+
+				if (ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE) {
+					continue;
+				}
+
+				return ssl_error;
+			}
+
+			total_sent += nResult;
+			remaining -= nResult;
+		}
+
+		return total_sent;
+	}
+	catch (const std::exception& error)
+	{
+		if (m_pApp) {
+			QMetaObject::invokeMethod(m_pApp, [this, error]() {
+				m_pApp->SetStatus("Fehler bei SendEncryptedMessage: " + std::string(error.what()));
+				}, Qt::QueuedConnection);
+		}
+
+		return SSL_ERROR_SSL;
+	}
 }
+
+
+int TLS::ReceiveEncryptedMessage()
+{
+	try
+	{
+		if (!m_pParam || !m_pParam->m_pSSL) {
+			return -1;
+		}
+
+		char buffer[2048] = {};
+		int bytesRead = SSL_read(m_pParam->m_pSSL, buffer, sizeof(buffer));
+
+		if (bytesRead > 0) {
+			std::string error(buffer, bytesRead);
+
+			if (m_pApp) {
+				QMetaObject::invokeMethod(m_pApp, [this, error]() {
+					m_pApp->SetReceived("Empfangen: " + std::string(error));
+					}, Qt::QueuedConnection);
+			}
+
+			return bytesRead;
+		}
+		else {
+			int err = SSL_get_error(m_pParam->m_pSSL, bytesRead);
+			if (m_pApp) {
+				char buf[256] = {};
+				ERR_error_string_n(err, buf, sizeof(buf));
+				std::string error = "Fehler bei SSL_read: " + std::string(buf);
+
+				QMetaObject::invokeMethod(m_pApp, [this, error]() {
+					m_pApp->SetStatus(std::string(error));
+					}, Qt::QueuedConnection);
+			}
+			return -err;
+		}
+	}
+	catch (const std::exception& error)
+	{
+		if (m_pApp) {
+			QMetaObject::invokeMethod(m_pApp, [this, error]() {
+				m_pApp->SetStatus("Fehler bei ReceiveEncryptedMessage: " + std::string(error.what()));
+				}, Qt::QueuedConnection);
+		}
+		return SSL_ERROR_SSL;
+	}
+}
+
 
 QString TLS::getTLSVersion()
 {

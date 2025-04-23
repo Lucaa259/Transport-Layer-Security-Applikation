@@ -256,7 +256,7 @@
     <string>--&gt; :</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="lineEdit_4">
+  <widget class="QLineEdit" name="ReceivedMessage">
    <property name="geometry">
     <rect>
      <x>310</x>

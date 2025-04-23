@@ -1,4 +1,4 @@
-#include "TLSApplikation.h"
+﻿#include "TLSApplikation.h"
 
 TLSApplikation::TLSApplikation(QWidget *parent)
     : QDialog(parent)
@@ -7,7 +7,7 @@ TLSApplikation::TLSApplikation(QWidget *parent)
     ui->setupUi(this);
 
     m_pTLS = std::make_unique<TLS>(this, Method::selectClient);
-    ui->CurrentStatus->setText("--> Current Status: No connection...");
+    ui->CurrentStatus->setText("No connection...");
     ui->IsClient->setChecked(TRUE);
 
     connect(    ui->ExitAppButton           ,   &QPushButton::clicked, this , &TLSApplikation::OnExitAppButtonClicked       );
@@ -36,6 +36,11 @@ void TLSApplikation::SetStatus(std::string status_text)
     ui->CurrentStatus->setText(status_text.c_str());
 }
 
+void TLSApplikation::SetReceived(std::string received_text)
+{
+    ui->ReceivedMessage->setText(received_text.c_str());
+}
+
 std::unique_ptr<TLS> TLSApplikation::TakeTLS()
 {
     return std::move(m_pTLS);
@@ -60,76 +65,127 @@ void TLSApplikation::InitSocket()
 void TLSApplikation::InitClientSocket()
 {
     if (ui->Port->text().isEmpty() || ui->IPv4->text().isEmpty()) {
+        ui->CurrentStatus->setText("Fehler: IP oder Port fehlt!");
         return;
     }
-
-    ui->CurrentStatus->setText("Setting up Client Socket");
 
     std::string strPort = ui->Port->text().toStdString();
     std::string strIP = ui->IPv4->text().toStdString();
 
-    ClientSocket clientSocket(*this, strIP, strPort);
+    ui->CurrentStatus->setText("Starte TLS-Client-Verbindung...");
 
-    ui->CurrentStatus->setText("Conneting to Server using Encryption!");
 
-    SetUpEncryption(clientSocket.GetSocket());
+
+    std::thread clientThread([this, strIP, strPort]() {
+        try
+        {
+            m_pClientSocket = std::make_unique<ClientSocket>(*this, strIP, strPort);
+
+            SOCKET socket = m_pClientSocket->GetSocket();
+
+            int nResult = m_pTLS->CreateSSL();
+            if (nResult != 1) throw std::runtime_error("CreateSSL fehlgeschlagen");
+
+            nResult = m_pTLS->SetEncryptedSocket(socket);
+            if (nResult != 1) throw std::runtime_error("SetEncryptedSocket fehlgeschlagen");
+
+            nResult = m_pTLS->EncryptedConnect();
+            if (nResult != 1) throw std::runtime_error("SSL_connect fehlgeschlagen");
+
+            QMetaObject::invokeMethod(this, [this]() {
+                ui->CurrentStatus->setText("Erfolgreich verbunden (Client)");
+                ui->TLS_used_cipher->setText(m_pTLS->getTLScipher());
+                ui->TLS_version->setText(m_pTLS->getTLSVersion());
+                }, Qt::QueuedConnection);
+
+            std::thread receiveThread([this]() {
+                while (true) {
+                    int res = m_pTLS->ReceiveEncryptedMessage();
+                    if (res <= 0)
+                        break;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                }
+                });
+
+            receiveThread.detach();
+        }
+        catch (const std::exception& ex)
+        {
+            QMetaObject::invokeMethod(this, [this, ex]() {
+                ui->CurrentStatus->setText("Client-Verbindungsfehler: " + QString::fromStdString(ex.what()));
+                }, Qt::QueuedConnection);
+        }
+        });
+
+    clientThread.detach();
 }
+
 
 
 void TLSApplikation::InitServerSocket()
 {
-    if (ui->Port->text().isEmpty())
-    {
+    if (ui->Port->text().isEmpty()) 
         return;
-    }
 
     std::string strPort = ui->Port->text().toStdString();
 
-    ServerSocket* pServerSocket = new ServerSocket(*this, strPort);
+    m_pServerSocket = std::make_unique<ServerSocket>(*this, strPort);
 
-    SOCKET sock = pServerSocket->GetSocket();
-    SetUpServer(sock);
+    std::thread serverThread([=]() {
+        try
+        {
+            QMetaObject::invokeMethod(this, [=]() {
+                this->SetStatus("Setze Server auf...");
+                }, Qt::QueuedConnection);
 
-    delete pServerSocket;
+            SOCKET clientSocket = m_pServerSocket->StartAcceptConnections();  // Blockierender accept()
+
+            QMetaObject::invokeMethod(this, [=]() {
+                this->SetStatus("Client verbunden – Starte TLS...");
+                }, Qt::QueuedConnection);
+
+            m_pTLS->CreateSSL();
+
+            m_pTLS->SetEncryptedSocket(clientSocket);
+            int tlsResult = m_pTLS->AcceptEncryptedClient();
+
+            if (tlsResult == 1)
+            {
+                QMetaObject::invokeMethod(this, [=]() {
+                    this->SetStatus("TLS-Verbindung erfolgreich!");
+                    ui->TLS_used_cipher->setText(m_pTLS->getTLScipher());
+                    ui->TLS_version->setText(m_pTLS->getTLSVersion());
+                    }, Qt::QueuedConnection);
+
+                std::thread receiveThread([this]() {
+                    while (true) {
+                        int res = m_pTLS->ReceiveEncryptedMessage();
+
+                        if (res <= 0) {
+                            QMetaObject::invokeMethod(this, [=]() {
+                                this->SetStatus("Verbindung wurde geschlossen oder Fehler beim Empfang.");
+                                }, Qt::QueuedConnection);
+                            break;
+                        }
+
+                        std::this_thread::sleep_for(std::chrono::milliseconds(50)); // CPU-schonend
+                    }
+                    });
+
+                receiveThread.detach();  // Thread selbstständig weiterlaufen lassen
+            }
+        }
+        catch (const std::exception& error)
+        {
+            QMetaObject::invokeMethod(this, [=]() {
+                this->SetStatus("Fehler: " + std::string(error.what()));
+                }, Qt::QueuedConnection);
+        }
+        });
+
+    serverThread.detach();  // GUI nicht blockieren
 }
 
-
-void TLSApplikation::SetUpEncryption(const SOCKET& nSocket)
-{
-    int nResult = m_pTLS->CreateSSL();
-    if (nResult != 1) { return; }
-
-    nResult = m_pTLS->SetEncryptedSocket(nSocket);
-    if (nResult != 1) { return; }
-
-    nResult = m_pTLS->EncryptedConnect();
-    if (nResult != 1) { return; }
-
-    ui->CurrentStatus->setText("Successfully connected!");
-
-    ui->TLS_used_cipher ->setText(  m_pTLS->getTLScipher  ()    );
-    ui->TLS_version     ->setText(  m_pTLS->getTLSVersion ()    );
-}
-
-void TLSApplikation::SetUpServer(const SOCKET& nSocket)
-{
-    int nResult = m_pTLS->UseAlgorithm();
-    if (nResult != 1) { return; }
-
-    nResult = m_pTLS->CreateSSL();
-    if (nResult != 1) { return; }
-
-    nResult = m_pTLS->SetEncryptedSocket(nSocket);
-    if (nResult != 1) { return; }
-
-    nResult = m_pTLS->AcceptEncryptedClient();
-    if (nResult != 1) { return; }
-
-    ui->CurrentStatus->setText("Successfully accepted Client!");
-
-    ui->TLS_used_cipher ->setText(  m_pTLS->getTLScipher()  );
-    ui->TLS_version     ->setText(  m_pTLS->getTLSVersion() );
-}
 
 void TLSApplikation::OnConnectButtonClicked()
 {
@@ -223,21 +279,15 @@ void TLSApplikation::OnSendMessageButtonClicked()
 
     int nRes = m_pTLS->SendEncryptedMessage(strEncryptedMessage.toStdString());
 
-    switch (nRes) {
-    case 1:
+    if (nRes > 0) {
         ui->CurrentStatus->setText("Message sent successfully!");
-        break;
-    case SSL_ERROR_SYSCALL:
-        ui->CurrentStatus->setText("Connection lost!");
-        break;
-    default:
-        ui->CurrentStatus->setText(QString("Send error: %1")
-            .arg(ERR_error_string(nRes, nullptr)));
+    }
+    else if (nRes == SSL_ERROR_SYSCALL) {
+        ui->CurrentStatus->setText("Error: Connection lost!");
     }
 
-    ui->EnterEncryptedMessage->clear();
+    ui->EnterEncryptedMessage->setText("");
 }
-
 
 void TLSApplikation::OnExitAppButtonClicked()
 {

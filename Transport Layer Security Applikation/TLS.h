@@ -64,6 +64,7 @@ public:
 	int UsePrivateKey(const std::string file);
 	int UseAlgorithm();
 	int SendEncryptedMessage(const std::string& message);
+	int ReceiveEncryptedMessage();
 
 	QString getTLSVersion();
 	QString getTLScipher();

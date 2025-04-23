@@ -6,33 +6,26 @@ ServerSocket::ServerSocket(TLSApplikation& app, const std::string& Port)
 	m_Acceptor(m_IoCtx, tcp::endpoint(tcp::v4(), static_cast<unsigned short>(std::stoi(Port)))),
 	m_ClientSocket(m_IoCtx)
 {
-	StartAcceptConnections();
 }
 
 ServerSocket::~ServerSocket()
 {
-	std::string test = "test test";
-	std::cout << test << std::endl;
-	// to do look here
 }
 
 
-void ServerSocket::StartAcceptConnections()
+SOCKET ServerSocket::StartAcceptConnections()
 {
-	try 
+	try
 	{
-		m_Acceptor.accept(m_ClientSocket);
+		m_Acceptor.accept(m_ClientSocket);  // blockierend
+		return static_cast<SOCKET>(m_ClientSocket.native_handle());
 	}
-	catch (const std::exception& e)
+	catch (const std::exception& error)
 	{
-		std::string strError = ("Error: " + std::string(e.what()) + "\n");
-
-		if (!m_pApp)
+		std::string strError = "Exception: " + std::string(error.what()) + "\n";
+		if (m_pApp)
 			m_pApp->SetStatus(strError);
 	}
-}
 
-const SOCKET& ServerSocket::GetSocket()
-{
-	return static_cast<SOCKET>(m_ClientSocket.native_handle());
+	return INVALID_SOCKET;
 }

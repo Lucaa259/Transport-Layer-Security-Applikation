@@ -14,9 +14,7 @@ public:
 	ServerSocket(TLSApplikation& app, const std::string& Port);
 	~ServerSocket();
 
-	void StartAcceptConnections();
-
-	const SOCKET& GetSocket();
+	SOCKET StartAcceptConnections();
 
 private:
 	TLSApplikation* m_pApp;

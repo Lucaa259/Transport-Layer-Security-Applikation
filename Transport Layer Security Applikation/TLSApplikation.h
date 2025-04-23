@@ -4,7 +4,7 @@
 #include <QPushButton>
 #include <QCheckBox>
 #include "EncryptionParamDlg.h"
-
+#include <iostream>
 #include "TLS.h"
 #include "ClientSocket.h"
 #include "ServerSocket.h"
@@ -24,6 +24,7 @@ public:
     Ui::TLSApplikationClass* GetUI();
 
     void SetStatus(std::string status_text);
+    void SetReceived(std::string received_text);
 
     std::unique_ptr<TLS> TakeTLS(); // Take Ownership of m_pTLS
 
@@ -31,11 +32,12 @@ private:
     Ui::TLSApplikationClass* ui;
     std::unique_ptr<TLS> m_pTLS;
 
+    std::unique_ptr<ServerSocket> m_pServerSocket;
+    std::unique_ptr<ClientSocket> m_pClientSocket;
+
     void InitSocket();
     void InitClientSocket();
     void InitServerSocket();
-    void SetUpEncryption(const SOCKET& nSocket);
-    void SetUpServer(const SOCKET& nSocket);
 
 private slots:
     void OnExitAppButtonClicked();
