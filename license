@@ -1,0 +1,47 @@
+Test Project License for Educational and Personal Use
+Copyright (c) 2025 Lucaa259
+
+1. Permitted Use:
+This project is freely available for educational purposes, learning, and personal use.
+
+You may use, modify, and study this project for your own educational development or personal projects.
+
+2. Restrictions:
+No Personal Profiling or Reference Use: You may not use this project to profile yourself or claim it as your own work in professional contexts.
+
+Commercial Use: Commercial use is prohibited without explicit permission.
+
+3. Third-Party Licenses:
+OpenSSL 3.4.1 (Apache 2.0)
+This project uses OpenSSL, licensed under:
+
+Apache License 2.0  
+- Requires attribution  
+- Allows modification and commercial use  
+- Includes patent grant  
+Full license: https://www.openssl.org/source/license.html  
+Boost 1.87.0 (Boost Software License 1.0)
+Boost.Asio and other Boost libraries are licensed under:
+
+Boost Software License - Version 1.0  
+- Permissive license  
+- Requires copyright notice preservation  
+Full license: https://www.boost.org/LICENSE_1_0.txt  
+Qt 6.9.0 (LGPL/GPL/Commercial)
+Qt framework is available under:
+
+GNU LGPL v3 (default) or Commercial License  
+- Allows dynamic linking for proprietary software (LGPL)  
+- Requires disclosure of source code modifications (LGPL)  
+Full license: https://www.qt.io/licensing/  
+4. Distribution Requirements:
+When distributing this project:
+
+Include this original license file
+
+Preserve all third-party license notices
+
+For Qt: Comply with LGPL Section 6 (for non-commercial use)
+
+5. Disclaimer:
+THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. THE AUTHOR DISCLAIMS ALL LIABILITY FOR DAMAGES ARISING FROM ITS USE.
